@@ -13,9 +13,9 @@ import os
 
 
 xai = 'tcav'
-dataset = 'imagenet'  
+dataset = 'apy'  
 model_name = "inceptionv3"
-concepts_dataset = 'broden'
+concepts_dataset = 'imagenet'
 rationales_dataset = 'apy'
 
 num_random_exp = 10
@@ -34,32 +34,52 @@ topk = 5
 
 
 #awa
-"""targets = ['elephant', 'squirrel', 'rabbit', 'wolf', 'buffalo', 'fox', 'leopard','gorilla','ox','chimpanzee','hamster','weasel','lion','tiger','hippopotamus','dalmatian','zebra',
+targets = ['elephant', 'squirrel', 'rabbit', 'wolf', 'buffalo', 'fox', 'leopard','gorilla','ox','chimpanzee','hamster','weasel','lion','tiger','hippopotamus','dalmatian','zebra',
            'otter','mouse','collie','beaver','skunk'] 
 
 targets = os.listdir(data_dir+'/imgs/awa_targets')
 
-concepts = ['ocean-s', 'desert-s', 'forest-s', 'water-s', 'cave-s', 'black-c', 'brown-c', 'white-c', 'blue-c', 'orange-c', 'red-c', 'yellow-c']"""
+concepts = ['ocean-s', 'desert-s', 'forest-s', 'water-s', 'cave-s', 'black-c', 'brown-c', 'white-c', 'blue-c', 'orange-c', 'red-c', 'yellow-c']
 
 
 #apy
-targets = [ 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'dog', 'horse', 'sheep', 'train', 'monkey', 'wolf', 'zebra', 
+"""targets = [ 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'dog', 'horse', 'sheep', 'train', 'monkey', 'wolf', 'zebra', 
            'mug', 'bag','bicycle', 'bird',]
 concepts = ['tail', 'head', 'ear', 'nose', 'mouth', 'hair', 'face', 'eye', 'torso', 'hand', 'arm', 'leg', 'wing', 'wheel', 'door', 
             'headlight', 'taillight', 'engine', 'text', 'horn', 'saddle', 'leaf', 'flower', 'pot', 'screen', 'skin', 'metal', 'plastic', 'wood', 
             'glass', 'leather']#'beak', 
 targets = ['indigo bird','snowbird','speedboat','lifeboat','fireboat','soda bottle','beer bottle','wine bottle','water bottle','minibus','trolleybus',
         'school bus']
-targets = ['fireboat','hummingbird']
+targets = ['fireboat','hummingbird']"""
 
 
 
 if rationales_dataset == "apy":
     rationales_mat = apy_rationales()
     get_asso_strength = get_apy_asso_strength
+    targets = [ 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'dog', 'horse', 'sheep', 'train', 'monkey', 'wolf', 'zebra', 
+               'mug', 'bag','bicycle', 'bird',]
+    concepts = ['tail', 'head', 'ear', 'nose', 'mouth', 'hair', 'face', 'eye', 'torso', 'hand', 'arm', 'leg', 'wing', 'wheel', 'door', 
+                'headlight', 'taillight', 'engine', 'text', 'horn', 'saddle', 'leaf', 'flower', 'pot', 'screen', 'skin', 'metal', 'plastic', 'wood', 
+                'glass', 'leather']#'beak', 
+    targets = ['indigo bird','snowbird','speedboat','lifeboat','fireboat','soda bottle','beer bottle','wine bottle','water bottle','minibus','trolleybus',
+            'school bus']
+    targets = ['fireboat','hummingbird']
+    targets = []
+    for d in os.listdir(data_dir+'/imgs/apy_targets/targets'):
+        if not len(os.listdir(data_dir+'/imgs/apy_targets/targets/'+d)) == 0:
+            targets.append(d) 
+    
+    
 if rationales_dataset == "awa":
     rationales_mat = awa_rationales(concepts)
     get_asso_strength = get_awa_asso_strength
+    targets = ['elephant', 'squirrel', 'rabbit', 'wolf', 'buffalo', 'fox', 'leopard','gorilla','ox','chimpanzee','hamster','weasel','lion','tiger','hippopotamus','dalmatian','zebra',
+               'otter','mouse','collie','beaver','skunk'] 
+
+    targets = os.listdir(data_dir+'/imgs/awa_targets')
+
+    concepts = ['ocean-s', 'desert-s', 'forest-s', 'water-s', 'cave-s', 'black-c', 'brown-c', 'white-c', 'blue-c', 'orange-c', 'red-c', 'yellow-c']
 
 
 
@@ -74,7 +94,7 @@ elif model_name == 'vgg_16':
 if not os.path.exists(res_dir):
     os.makedirs(res_dir)
     
-with open(res_dir+'/'+model_name+'_params.txt', 'w') as f:
+with open(res_dir+'/'+rationales_dataset+'_params.txt', 'w') as f:
     f.write('dataset : '+dataset+'\n')
     f.write('black box : '+model_name+'\n')
     f.write('bottleneck : '+bottleneck[0]+'\n')
