@@ -23,7 +23,7 @@ num_random_exp = 10
 alphas_cav = [0.01]
 model_cav = 'logistic'
 
-test_dir = model_name+'_'+dataset+'_'+concepts_dataset+'_'+model_cav+'_'+str(alphas_cav[0])
+test_dir = model_name+'_'+dataset+'_'+concepts_dataset+'_'+rationales_dataset+'_'+model_cav+'_'+str(alphas_cav[0])
 res_dir = './results/'+test_dir
 data_dir = './data/'
 
