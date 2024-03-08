@@ -12,13 +12,14 @@ import pickle
 import os
 from numpy import dot
 from numpy.linalg import norm
+from sklearn.metrics import r2_score
 
 
-xai = 'cce'
-dataset = 'apy'  
-model_name = "inceptionv3"
-concepts_dataset = 'imagenet'
-rationales_dataset = 'apy'
+xai = 'tcav'
+dataset = 'imagenet'  
+model_name = "resnet_101"
+concepts_dataset = 'broden'
+rationales_dataset = 'awa'
 
 num_random_exp = 10
 
@@ -67,7 +68,7 @@ if rationales_dataset == "awa":
     concepts = ['ocean-s', 'desert-s', 'forest-s', 'water-s', 'cave-s', 'black-c', 'brown-c', 'white-c', 'blue-c', 'orange-c', 'red-c', 'yellow-c']
     rationales_mat = awa_rationales(concepts)
 
-topk = len(concepts)
+topk = 6 
 
 
 if model_name == 'inceptionv3':
@@ -176,6 +177,79 @@ def prep_tcav_rationales_vectors(topk_scores, method, rationales_dataset):
 
 
 
+
+
+def r2_sim(topk_scores, method, rationales_dataset):
+    r2_sim = {}
+    
+    if rationales_dataset == "awa":
+        for target in targets:
+            rationale_dict = {}
+            rationale = []
+            topk_concepts = list(topk_scores[target].keys()) 
+            print(target, topk_concepts)
+            for c in topk_concepts:
+                print(c)
+                rationale_dict[c] = get_asso_strength(target,c, rationales_mat)/100
+                rationale.append(get_asso_strength(target,c, rationales_mat)/100)
+            
+            tcav_dict = topk_scores[target] 
+            tcav = []
+            for v in topk_scores[target].keys():
+                tcav.append(topk_scores[target][v])
+            
+            r2_sim[target] = r2_score(tcav, rationale)
+        
+    
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_R2_fixed_target.pkl', 'wb') as fp:
+            pickle.dump(r2_sim, fp)
+            print('Spearman coeff on fixed targets saved successfully to file') 
+        
+        
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_R2_fixed_target.pkl', 'rb') as fp:
+            print('Results:', pickle.load(fp))
+    
+        return r2_sim
+    
+    
+    if rationales_dataset == "apy":
+        for target in targets:
+            rationale_dict = {}
+            rationale = []
+            topk_concepts = list(topk_scores[target].keys()) 
+            print(target, topk_concepts)
+            for c in topk_concepts:
+                rationale_dict[c] = get_asso_strength(target,c, rationales_mat)/100
+                rationale.append(get_asso_strength(target,c, rationales_mat)/100)
+            
+            tcav_dict = topk_scores[target] 
+            tcav = []
+            for v in topk_scores[target].keys():
+                tcav.append(topk_scores[target][v])
+            
+            rationale_mean, tcav_mean = [], []
+            for i in range(len(rationale)):
+                rationale_mean.append(np.mean(rationale[i]))
+                tcav_mean.append(np.mean(tcav[i]))
+            
+            r2_sim[target] = r2_score(tcav_mean, rationale_mean)
+        
+        
+        if not os.path.exists(res_dir+'/plausibility/'+rationales_dataset+'/'):
+            os.makedirs(res_dir+'/plausibility/'+rationales_dataset+'/')
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_R2_fixed_target.pkl', 'wb') as fp:
+            pickle.dump(r2_sim, fp)
+            print('Cosine similarities on fixed targets saved successfully to file') 
+        
+        
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_R2_fixed_target.pkl', 'rb') as fp:
+            print('Results:', pickle.load(fp))
+    
+        return r2_sim
+
+
+
+
 def cosine_sim(topk_scores, method, rationales_dataset):
     cos_sim = {}
     
@@ -187,8 +261,8 @@ def cosine_sim(topk_scores, method, rationales_dataset):
             print(target, topk_concepts)
             for c in topk_concepts:
                 print(c)
-                rationale_dict[c] = get_asso_strength(target,c, rationales_mat)
-                rationale.append(get_asso_strength(target,c, rationales_mat))
+                rationale_dict[c] = get_asso_strength(target,c, rationales_mat)/100
+                rationale.append(get_asso_strength(target,c, rationales_mat)/100)
             
             tcav_dict = topk_scores[target] 
             tcav = []
@@ -198,12 +272,48 @@ def cosine_sim(topk_scores, method, rationales_dataset):
             cos_sim[target] = dot(tcav, rationale)/(norm(tcav)*norm(rationale))
         
     
-        with open(res_dir+'/plausibility/'+method+'_cosine_fixed_target.pkl', 'wb') as fp:
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_cosine_fixed_target.pkl', 'wb') as fp:
             pickle.dump(cos_sim, fp)
             print('Spearman coeff on fixed targets saved successfully to file') 
         
         
-        with open(res_dir+'/plausibility/'+method+'_cosine_fixed_target.pkl', 'rb') as fp:
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_cosine_fixed_target.pkl', 'rb') as fp:
+            print('Results:', pickle.load(fp))
+    
+        return cos_sim
+    
+    
+    if rationales_dataset == "apy":
+        for target in targets:
+            rationale_dict = {}
+            rationale = []
+            topk_concepts = list(topk_scores[target].keys()) 
+            print(target, topk_concepts)
+            for c in topk_concepts:
+                rationale_dict[c] = get_asso_strength(target,c, rationales_mat)/100
+                rationale.append(get_asso_strength(target,c, rationales_mat)/100)
+            
+            tcav_dict = topk_scores[target] 
+            tcav = []
+            for v in topk_scores[target].keys():
+                tcav.append(topk_scores[target][v])
+            
+            rationale_mean, tcav_mean = [], []
+            for i in range(len(rationale)):
+                rationale_mean.append(np.mean(rationale[i]))
+                tcav_mean.append(np.mean(tcav[i]))
+            
+            cos_sim[target] = dot(tcav_mean, rationale_mean)/(norm(tcav_mean)*norm(rationale_mean))
+        
+        
+        if not os.path.exists(res_dir+'/plausibility/'+rationales_dataset+'/'):
+            os.makedirs(res_dir+'/plausibility/'+rationales_dataset+'/')
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_cosine_fixed_target.pkl', 'wb') as fp:
+            pickle.dump(cos_sim, fp)
+            print('Cosine similarities on fixed targets saved successfully to file') 
+        
+        
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_cosine_fixed_target.pkl', 'rb') as fp:
             print('Results:', pickle.load(fp))
     
         return cos_sim
@@ -221,6 +331,35 @@ def euclidean_sim(topk_scores, method, rationales_dataset):
             print(target, topk_concepts)
             for c in topk_concepts:
                 print(c)
+                rationale_dict[c] = get_asso_strength(target,c, rationales_mat)/100
+                rationale.append(get_asso_strength(target,c, rationales_mat)/100)
+            
+            tcav_dict = topk_scores[target] 
+            tcav = []
+            for v in topk_scores[target].keys():
+                tcav.append(topk_scores[target][v])
+            
+            euc_sim[target] = 1./(np.finfo(float).eps+np.sqrt(sum(pow(a-b,2) for a, b in zip(tcav, rationale))))
+            euc_sim[target] = 1./(1+np.sqrt(sum(pow(a-b,2) for a, b in zip(tcav, rationale))))
+        
+    
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_euclidean_fixed_target.pkl', 'wb') as fp:
+            pickle.dump(euc_sim, fp)
+            print('Euclidean similarities on fixed targets saved successfully to file') 
+        
+        
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_euclidean_fixed_target.pkl', 'rb') as fp:
+            print('Results:', pickle.load(fp))
+    
+        return euc_sim
+
+    if rationales_dataset == "apy":
+        for target in targets:
+            rationale_dict = {}
+            rationale = []
+            topk_concepts = list(topk_scores[target].keys()) 
+            print(target, topk_concepts)
+            for c in topk_concepts:
                 rationale_dict[c] = get_asso_strength(target,c, rationales_mat)
                 rationale.append(get_asso_strength(target,c, rationales_mat))
             
@@ -229,15 +368,23 @@ def euclidean_sim(topk_scores, method, rationales_dataset):
             for v in topk_scores[target].keys():
                 tcav.append(topk_scores[target][v])
             
-            euc_sim[target] = 1./(np.finfo(float).eps+np.sqrt(sum(pow(a-b,2) for a, b in zip(tcav, rationale))))
+            rationale_mean, tcav_mean = [], []
+            for i in range(len(rationale)):
+                rationale_mean.append(np.mean(rationale[i]))
+                tcav_mean.append(np.mean(tcav[i]))
+            
+            euc_sim[target] = 1./(np.finfo(float).eps+np.sqrt(sum(pow(a-b,2) for a, b in zip(tcav_mean, rationale_mean))))
+            euc_sim[target] = 1./(1+np.sqrt(sum(pow(a-b,2) for a, b in zip(tcav_mean, rationale_mean))))
         
-    
-        with open(res_dir+'/plausibility/'+method+'_euclidean_fixed_target.pkl', 'wb') as fp:
+        
+        if not os.path.exists(res_dir+'/plausibility/'+rationales_dataset+'/'):
+            os.makedirs(res_dir+'/plausibility/'+rationales_dataset+'/')
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_euclidean_fixed_target.pkl', 'wb') as fp:
             pickle.dump(euc_sim, fp)
-            print('Spearman coeff on fixed targets saved successfully to file') 
+            print('Euclidean similarities on fixed targets saved successfully to file') 
         
         
-        with open(res_dir+'/plausibility/'+method+'_euclidean_fixed_target.pkl', 'rb') as fp:
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_euclidean_fixed_target.pkl', 'rb') as fp:
             print('Results:', pickle.load(fp))
     
         return euc_sim
@@ -267,12 +414,12 @@ def spearman_target_fixed(topk_scores, method, rationales_dataset):
             sp_coeff_concepts[target] = spearmans_rank(rationale, tcav)[0][1]
         
     
-        with open(res_dir+'/plausibility/'+method+'_spearman_fixed_target.pkl', 'wb') as fp:
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_spearman_fixed_target.pkl', 'wb') as fp:
             pickle.dump(sp_coeff_concepts, fp)
             print('Spearman coeff on fixed targets saved successfully to file') 
         
         
-        with open(res_dir+'/plausibility/'+method+'_spearman_fixed_target.pkl', 'rb') as fp:
+        with open(res_dir+'/plausibility/'+method+'_'+str(topk)+'_spearman_fixed_target.pkl', 'rb') as fp:
             print('Results:', pickle.load(fp))
     
         return sp_coeff_concepts
@@ -303,12 +450,12 @@ def spearman_target_fixed(topk_scores, method, rationales_dataset):
         
         if not os.path.exists(res_dir+'/plausibility/'+rationales_dataset+'/'):
             os.makedirs(res_dir+'/plausibility/'+rationales_dataset+'/')
-        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_spearman_fixed_target.pkl', 'wb') as fp:
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_spearman_fixed_target.pkl', 'wb') as fp:
             pickle.dump(sp_coeff_concepts, fp)
             print('Spearman coeff on fixed targets saved successfully to file') 
         
         
-        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_spearman_fixed_target.pkl', 'rb') as fp:
+        with open(res_dir+'/plausibility/'+rationales_dataset+'/'+method+'_'+str(topk)+'_spearman_fixed_target.pkl', 'rb') as fp:
             print('Results:', pickle.load(fp))
     
         return sp_coeff_concepts
@@ -359,6 +506,8 @@ if not os.path.exists(res_dir+'/plausibility/'):
     
 #TODO : rationales_dataset
 
+
+#for topk in range(1,len(concepts)):
 if xai == 'cce':
     run_eval_cce(targets, concepts, dataset, rationales_dataset, model_name, bottleneck, num_random_exp, alphas_cav, model_cav, res_dir+'/cce/', data_dir)
     #cce_apy_concepts = os.listdir(data_dir+'/broden/apy')
@@ -367,6 +516,7 @@ if xai == 'cce':
     euclidean_sim(topk_cce_scores, 'cce', rationales_dataset)
     cosine_sim(topk_cce_scores, 'cce', rationales_dataset)
     spearman_target_fixed(topk_cce_scores,'cce',rationales_dataset)
+    r2_sim(topk_cce_scores,'cce',rationales_dataset)
     #spearman_target_concept_fixed(topk_cce_scores,'cce',rationales_dataset)
 
 if xai == 'tcav':
@@ -376,6 +526,7 @@ if xai == 'tcav':
     euclidean_sim(topk_tcav_scores, 'tcav', rationales_dataset)
     cosine_sim(topk_tcav_scores, 'tcav', rationales_dataset)
     spearman_target_fixed(topk_tcav_scores,'tcav',rationales_dataset)
+    r2_sim(topk_tcav_scores,'tcav',rationales_dataset)
     #spearman_target_concept_fixed(topk_tcav_scores,'tcav',rationales_dataset)
     
 

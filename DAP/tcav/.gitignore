@@ -1,0 +1,15 @@
+#Data
+tcav/tcav_examples/image_models/imagenet/data/
+tcav/tcav_examples/image_models/imagenet/downloaded_data/
+
+#Generated
+tmp/
+
+
+
+*.pyc
+/dist/
+/*.egg-info
+.ipynb_checkpoints/
+build/
+
