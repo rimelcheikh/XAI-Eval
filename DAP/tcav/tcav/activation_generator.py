@@ -60,9 +60,9 @@ class ActivationGeneratorBase(ActivationGeneratorInterface):
 
   def get_activations_for_examples(self, examples, bottleneck):
     acts = self.model.run_examples(examples, bottleneck)
-    return self.model.reshape_activations(acts).squeeze()
+    return acts#self.model.reshape_activations(acts).squeeze()
 
-  def process_and_load_activations(self, bottleneck_names, concepts, targets):
+  def process_and_load_activations(self, bottleneck_names, concepts):
     acts = {}
     if self.acts_dir and not tf.io.gfile.exists(self.acts_dir):
       tf.io.gfile.makedirs(self.acts_dir)
@@ -94,7 +94,7 @@ class ActivationGeneratorBase(ActivationGeneratorInterface):
               np.save(f, acts[concept][bottleneck_name], allow_pickle=False)
               
               
-    for target in targets:
+    """for target in targets:
         
       if target not in acts:
         acts[target] = {}
@@ -118,7 +118,7 @@ class ActivationGeneratorBase(ActivationGeneratorInterface):
                 '{} does not exist, Making one...'.format(acts_path))
             tf.io.gfile.mkdir(os.path.dirname(acts_path))
             with tf.io.gfile.GFile(acts_path, 'w') as f:
-              np.save(f, acts[target][bottleneck_name], allow_pickle=False)
+              np.save(f, acts[target][bottleneck_name], allow_pickle=False)"""
     return acts
 
 

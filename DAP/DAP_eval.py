@@ -20,8 +20,9 @@ from joblib import dump, load
 from tcav.eval_tcav import run_eval_tcav
 from DAP_model import DAP_model, run_testing_DAP
 
+from custom_DAP_model import get_DAP_model
 
-pretrained = False
+pretrained = True
 
 
 (train_images, train_labels), (test_images, test_labels) = datasets.cifar100.load_data()
@@ -152,14 +153,21 @@ data_dir = '../data/'
 bottleneck = ['block5_pool']
 
 
-model, SVR = DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, pretrained)
 
-pred_per_x = run_testing_DAP(model, model_name, SVR, mat_pd, idx_to_label_cifar, X_test, y_test, y_test_0, pretrained)
+
+model = get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, pretrained)
+
+
+
+_, SVR = DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, pretrained)
+
+
+#pred_per_x = run_testing_DAP(model, model_name, SVR, mat_pd, idx_to_label_cifar, X_test, y_test, y_test_0, pretrained)
     
 
 
 
-run_eval_tcav(model, targets, concepts, dataset, model_name, bottleneck, num_random_exp, alphas_cav, model_cav, res_dir + '/tcav/', data_dir, pred_per_x)
+run_eval_tcav(model, targets, concepts, dataset, model_name, weights_matrix, bottleneck, num_random_exp, alphas_cav, model_cav, res_dir + '/tcav/', data_dir)#, pred_per_x)
     
 
 

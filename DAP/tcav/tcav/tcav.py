@@ -316,7 +316,7 @@ class TCAV(object):
 
     # Get acts
     acts = activation_generator.process_and_load_activations(
-        [bottleneck], concepts, [target_class])
+        [bottleneck], concepts + [target_class])
 
     # Get CAVs
     cav_hparams = CAV.default_hparams()

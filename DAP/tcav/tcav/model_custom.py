@@ -75,7 +75,11 @@ class CustomPublicImageModelWrapper(tcav_model.ImageModelWrapper):
 
     def get_bottleneck_tensors_2(self):
       self.bottlenecks_tensors = {}
-      layers = self.model.layers
+      try: 
+          layers = self.model.layers[0].layers
+      except:
+          layers = self.model.layers
+          
       for layer in layers:
         if 'input' not in layer.name and 'activation' not in layer.name and 'batch_normalization' not in layer.name and 'conv2d' not in layer.name:
           self.bottlenecks_tensors[layer.name] = layer.output
@@ -140,7 +144,7 @@ def get_model(model_name):
     
       
 
-def run_tcav_custom(target, concept, dataset, bottleneck, model_name, working_dir, data_dir, num_random_exp, alphas, model_cav):
+def run_tcav_custom(model, target, concept, dataset, bottleneck, model_name, working_dir, data_dir, num_random_exp, alphas, model_cav):
 
     # the name of the parent directory that results are stored (only if you want to cache)
     project_name = 'tcav_test_'+str(target)
@@ -169,9 +173,10 @@ def run_tcav_custom(target, concept, dataset, bottleneck, model_name, working_di
 
     # Your code for training and creating a model here. In this example, I saved the model previously
     # using model.save and am loading it again in keras here using load_model.
-    model = load_model('./DAP/adjusted_'+model_name+'_'+target)
+    #model = load_model('./DAP/adjusted_'+model_name+'_'+target)
     
-    
+    model = load_model('./DAP/'+model_name)
+    #model = load_model('./DAP/model')
     
     
     
@@ -179,18 +184,27 @@ def run_tcav_custom(target, concept, dataset, bottleneck, model_name, working_di
       
     # input is the first tensor, logit and prediction is the final tensor.
     # note that in keras, these arguments should be exactly the same for other models (e.g VGG16), except for the model name
-    endpoints = dict(
-        input=model.inputs[0].name,
-        input_tensor=model.inputs[0],
-        logit=model.outputs[0].name,
-        prediction=model.outputs[0].name,
-        prediction_tensor=model.outputs[0],
-    )
-    
+    try:
+        endpoints = dict(
+            input=model.layers[0].inputs[0].name,#model.inputs[0].name,
+            input_tensor=model.layers[0].inputs[0],#model.inputs[0],
+            logit=model.outputs[0].name,
+            prediction=model.outputs[0].name,
+            prediction_tensor=model.outputs[0],
+        )
+    except:
+        endpoints = dict(
+            input=model.inputs[0].name,
+            input_tensor=model.inputs[0],
+            logit=model.outputs[0].name,
+            prediction=model.outputs[0].name,
+            prediction_tensor=model.outputs[0],
+        )
     
     #img_shape = model.inputs[0].shape 
     #img_shape = get_model(model_name)[1]
-    img_shape = [224, 224, 3]
+    #img_shape = [224, 224, 3]
+    img_shape = [32, 32, 3]
     
     #TODO
     # instance of model wrapper, change the labels and other arguments to whatever you need
