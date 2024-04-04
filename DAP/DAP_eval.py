@@ -4,7 +4,6 @@ import pickle
 import os
 import pandas as pd
 
-import matplotlib.pyplot as plt
 
 
 from keras import backend as K
@@ -165,6 +164,8 @@ _, SVR = DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_trai
 #pred_per_x = run_testing_DAP(model, model_name, SVR, mat_pd, idx_to_label_cifar, X_test, y_test, y_test_0, pretrained)
     
 
+"""for layer in model.layers:
+    layer.trainable = True"""
 
 
 run_eval_tcav(model, targets, concepts, dataset, model_name, weights_matrix, bottleneck, num_random_exp, alphas_cav, model_cav, res_dir + '/tcav/', data_dir)#, pred_per_x)
