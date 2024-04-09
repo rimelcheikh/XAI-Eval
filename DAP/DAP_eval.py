@@ -19,7 +19,7 @@ from joblib import dump, load
 from tcav.eval_tcav import run_eval_tcav
 from DAP_model import DAP_model, run_testing_DAP
 
-from custom_DAP_model import get_DAP_model
+from custom_DAP_model_3 import get_DAP_model
 
 pretrained = True
 
@@ -62,6 +62,7 @@ j = 0
 for i in ind_list:
     idx_to_label_cifar[i] = targets[j]
     j+=1
+    
     
 
 
@@ -154,7 +155,7 @@ bottleneck = ['block5_pool']
 
 
 
-model = get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, pretrained)
+model = get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, targets_idx, pretrained)
 
 
 
