@@ -27,8 +27,8 @@ from joblib import dump, load
 
 
 
-def DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, pretrained):
-    
+def DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar,targets_idx, pretrained):
+
     
     
     
