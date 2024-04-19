@@ -34,7 +34,7 @@ def DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_
     
     #Training the Neural Architecture + Training SVR
     if pretrained: 
-        model = load_model('./DAP/'+model_name)
+        model = load_model('./DAP/'+model_name+"_2")
         #model = load_model('./DAP/model')
         with open('./DAP/'+model_name+'/objects/extracted_features_train.pkl','rb') as f:
             extracted_features_train = pickle.load(f) 

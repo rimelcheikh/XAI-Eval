@@ -40,13 +40,14 @@ class DAPModel(Model):
         self.backbone_layer_21 = model.layers[21]
         #self.dense_layer = Dense(512)
         self.GlobalAveragePooling2D =  GlobalAveragePooling2D()
-        self.attributes_layer = CustomSVRActivationLayer(mat_pd,targets_idx, weights_matrix) #TODO : define output dim       
-        self.class_layer = CustomLabelsLayer(weights_matrix)
+        self.attributes_layer = CustomSVRActivationLayer(mat_pd,targets_idx, tf.convert_to_tensor(weights_matrix,dtype=tf.float32)) #TODO : define output dim       
+        self.class_layer = CustomLabelsLayer(tf.convert_to_tensor(weights_matrix,dtype=tf.float32))
         self.weights_matrix = tf.convert_to_tensor(weights_matrix,dtype=tf.float32)
         self.mat_pd = mat_pd
         self.targets_idx = targets_idx
         self.true_label = None
         self.training = None
+        #self.out = self.call(self.input_layer)
     
 
     def get_config(self):
@@ -89,7 +90,7 @@ class DAPModel(Model):
     def call(self,inputs,training=None,true_label=None):
        #return inputs#self.model(inputs)
        #x = self.model(inputs
-       """x = self.backbone_layer_0(inputs)
+       x = self.backbone_layer_0(inputs)
        x = self.backbone_layer_1(x)
        x = self.backbone_layer_2(x)
        x = self.backbone_layer_3(x)
@@ -111,16 +112,14 @@ class DAPModel(Model):
        x = self.backbone_layer_19(x)
        x = self.backbone_layer_20(x)
        x = self.backbone_layer_21(x)
-       #x = self.dense_layer(x)
        x = self.GlobalAveragePooling2D(x)  #shape=(64,512)
-       x = self.attributes_layer(x,self.true_label,self.training)   #[64, 12]
+       return x
+       """x = self.attributes_layer(x,self.true_label,self.training)   #[64, 12]
+       print('okk')
        return self.class_layer(x)   #[64, 17]"""
-       return inputs
-       #return  self.ol(inputs)
+       #return self.cal(inputs)
     
-    
-    """def call(self,inputs):
-        return self(inputs)"""
+
     
     
     def convert_to_ragged(self,instances):
@@ -139,38 +138,19 @@ class DAPModel(Model):
         # Unpack the data. Its structure depends on your model and
         # on what you pass to `fit()`.
         x, y = data
-        
-        """base_model = VGG19(include_top=False)
-        for layer in base_model.layers:
-            layer.trainable = True
-        #x = self.convert_to_ragged(x)
-        x = base_model(x)"""
-        
-        """x = self.model(x)
-        
-        #x = GlobalAveragePooling2D()(x)
-        x = self.attributes_layer(x)
-        x = self.class_layer(x)"""
-        #x = Dense(17,trainable=False,use_bias=False,activation='softmax')(x)
-        
-        #trainable_vars = self.trainable_variables
+    
 
         with tf.GradientTape() as tape:
             self.true_label = y
             self.training = True
-            #tape.watch(self.trainable_variables)
+
             self(x)
             y_pred = self.cal(x)#,True, y)  # Forward pass, contains return of call function
-            #y_pred = tf.ragged.boolean_mask(y_pred,masks) # truncate according to masks
+            
             # Compute the loss value.
             # The loss function is configured in `compile()`.
             loss = self.compiled_loss(y, y_pred, sample_weight=None, regularization_losses=self.losses)
 
-        """self._validate_target_and_loss(y, loss)
-        # Run backwards pass.
-        self.optimizer.minimize(loss, self.trainable_variables[1], tape=tape)
-        return self.compute_metrics(x, y, y_pred, sample_weight=None)"""
-        
         #np.shape(self.layers[0].get_weights()[1])
         #self.layers[1].get_weights()[0].shape
         gradients = tape.gradient(loss, self.trainable_variables)
@@ -192,16 +172,14 @@ class DAPModel(Model):
 
 
     def test_step(self, data):
-        # Unpack the data
         # Unpack the data. Its structure depends on your model and
         # on what you pass to `fit()`.
         x, y = data
         
-
+        self.training = False
         # Compute predictions
         self(x)
         y_pred = self.cal(x)#, None, training=False)
-        #y_pred = tf.ragged.boolean_mask(y_pred,masks)
         
         # Updates the metrics tracking the loss
         self.compiled_loss(y, y_pred, regularization_losses=self.losses)
@@ -217,8 +195,13 @@ class DAPModel(Model):
         return input_shape
 
     def build(self, input_shape):
-        """for i in range(len(self.layers)):
-            self.layers[i].add_weights(self.layers[i].get_weights())"""
+        
+        """self._is_graph_network = True
+        self._init_graph_network(
+            inputs=self.input_layer,
+            outputs=self.out
+        )"""
+
         super(DAPModel, self).build(input_shape)
         
 
@@ -232,7 +215,7 @@ class CustomLabelsLayer(Layer):
     def call(self, inputs):
         #return Dense(17)(inputs)
         
-        w = tf.convert_to_tensor(self.weights_matrix,dtype=tf.float32)
+        w = self.weights_matrix#tf.convert_to_tensor(self.weights_matrix,dtype=tf.float32)
         w_i = tf.linalg.pinv(w).transpose()
         res = tf.linalg.matmul(inputs,w_i)  
         return res
@@ -249,13 +232,13 @@ class CustomLabelsLayer(Layer):
         return input_shape       
     
     def build(self, input_shape):
-        
+        super(CustomLabelsLayer, self).build(input_shape)
         self.w = self.add_weight(name='kernel',
                                       shape=(int(input_shape[1]),17, int(input_shape[0])),
-                                      trainable=True)
-        self.b = self.add_weight(name='bias',shape=(int(input_shape[0]),), initializer="zeros", trainable=True)
+                                      trainable=False)
+        self.b = self.add_weight(name='bias',shape=(int(input_shape[0]),), initializer="zeros", trainable=False)
 
-        super(CustomLabelsLayer, self).build(input_shape)
+        
         #super().build(input_shape)
         
         
@@ -267,14 +250,15 @@ class CustomSVRActivationLayer(Layer):
         self.svr = load('./SV/svr_linear_all.joblib')
         self.alpha = None
         self.reg = None
-        self.x_avg = 0
-        self.y_avg = 0
-        self.Sxy = 0
-        self.Sx = 0 
-        self.n = 0
+        self.x_avg = {}
+        self.y_avg = {}
+        self.Sxy = {}
+        self.Sx = {} 
+        self.n = {}
         self.mat_pd = mat_pd
         self.targets_idx = targets_idx
         self.weights_matrix = weights_matrix
+        self.reg_model = {}
 
 
     def reg_function(self, inputs, true_label, training):
@@ -295,50 +279,49 @@ class CustomSVRActivationLayer(Layer):
                 )
             
     
-        """res = tf.zeros(((len(reg_labels_train)),len(true_label)))
-        if training:
-            for i in range(len(reg_labels_train)):
-                if self.reg == None:
-                    self.reg = OnlineLinearRegressor(inputs.shape[0])
-                reg_model = self.reg
-                self.reg.fit(reg_model.x_avg,reg_model.y_avg,reg_model.Sxy,reg_model.Sx,reg_model.n,inputs, reg_labels_train[i])
-                
-                upd = self.reg.predict(inputs)
-                
-                res = tf.tensor_scatter_nd_update(
-                    res,
-                    indices=[[i]],  # Update element at (i, j)
-                    updates=[upd]  # Example update value
-                )"""
         res = tf.zeros(((len(reg_labels_train)),len(true_label)))
-        if training:
-            if self.reg == None:
-                self.reg = OnlineLinearRegressor(inputs.shape[0])
-            reg_model = self.reg
-            self.reg.fit(reg_model.x_avg,reg_model.y_avg,reg_model.Sxy,reg_model.Sx,reg_model.n,inputs, reg_labels_train[0])
-            
-            upd = self.reg.predict(inputs)
+
+        
+        if training:            
             for i in range(len(reg_labels_train)):
+                if i not in self.reg_model.keys():
+                    self.reg_model[i] = OnlineLinearRegressor(inputs.shape[0])
                 
+                reg_model = self.reg_model[i]
+                self.new_x_avg[i], self.new_y_avg[i], self.new_Sxy[i], self.new_Sx[i], self.new_n[i] = self.reg_model[i].fit(self.x_avg[i],
+                                      self.y_avg[i],
+                                      self.Sxy[i],
+                                      self.Sx[i],
+                                      self.n[i],
+                                      inputs, 
+                                      reg_labels_train[i])
+                #self.reg_model[i] = self.reg
+                
+                upd = self.reg_model[i].predict(inputs)
                 
                 res = tf.tensor_scatter_nd_update(
                     res,
                     indices=[[i]],  # Update element at (i, j)
                     updates=[upd]  # Example update value
                 )
-        
-        else:
-            res = self.reg.predict(inputs)       
+        else:           
+            for i in range(len(reg_labels_train)): 
+                upd = self.reg_model[i].predict(inputs)
+                res = tf.tensor_scatter_nd_update(
+                    res,
+                    indices=[[i]],  # Update element at (i, j)
+                    updates=[upd]  # Example update value
+                )       
                 
-                
-        
             
         return res.transpose()
 
     
     def call(self, inputs, true_label, training):       
         #return Dense(12)(inputs)
+        print('okkk')
         res = self.reg_function(inputs, true_label, training)
+        print('----',res)
         return res
 
 
@@ -348,13 +331,15 @@ class CustomSVRActivationLayer(Layer):
     
     def build(self, input_shape):
         #à vérifier la dimension des poids et de input_shape
+        
         self.w = self.add_weight(name='kernel',
                                       shape=(int(input_shape[1]),12, int(input_shape[0])),
-                                      trainable=True)
-        self.b = self.add_weight(name='bias',shape=(int(input_shape[0]),), initializer="zeros", trainable=True)
+                                      trainable=False)
+        self.b = self.add_weight(name='bias',shape=(int(input_shape[0]),), initializer="zeros", trainable=False)
 
         super(CustomSVRActivationLayer, self).build(input_shape)
         #super().build(input_shape)
+        print('ok')
 
 
 
@@ -388,11 +373,11 @@ class OnlineLinearRegressor:
             raise ValueError
         
         x_star_expanded = tf.expand_dims(x_star, axis=1)
-        y_star_expanded = tf.expand_dims(y_star, axis=1)
+        y_star_expanded = tf.expand_dims(y_star, axis=0)
         new_Sx =  Sx + tf.math.reduce_sum((new_x-x_star_expanded)**2,1)
         new_Sxy = Sxy + tf.math.reduce_sum(((new_x-x_star_expanded)*(tf.expand_dims(new_y, axis=1)-y_star_expanded)),1) #TODO : check correctness
 
-        beta = new_Sxy/new_Sx   #TODO : beta should be of shape n_samples or n_features ?
+        beta = new_Sxy/new_Sx   
         alpha = new_y_avg - beta * new_x_avg
 
         # Update parameters
@@ -404,6 +389,8 @@ class OnlineLinearRegressor:
         self.Sxy = new_Sxy
         self.Sx = new_Sx 
         self.n = new_n
+        
+        return new_x_avg, new_y_avg, new_Sxy, new_Sx, new_n 
 
         
     def predict(self, X):
@@ -421,41 +408,12 @@ class OnlineLinearRegressor:
         return res + self.alpha
 
 
-def tf_lr(x_avg,y_avg,Sxy,Sx,n,new_x,new_y):
-    """
-    x_avg: average of previous x, if no previous sample, set to 0
-    y_avg: average of previous y, if no previous sample, set to 0
-    Sxy: covariance of previous x and y, if no previous sample, set to 0
-    Sx: variance of previous x, if no previous sample, set to 0
-    n: number of previous samples
-    new_x: new incoming 1-D numpy array x
-    new_y: new incoming 1-D numpy array x
-    """
-    new_n = n + len(new_x)
 
-    new_x_avg = (x_avg*n + tf.math.reduce_sum(new_x))/new_n
-    new_y_avg = (y_avg*n + tf.math.reduce_sum(new_y))/new_n
-
-    if n > 0:
-        x_star = (x_avg*tf.math.sqrt(n) + new_x_avg*tf.math.sqrt(new_n))/(tf.math.sqrt(n)+tf.math.sqrt(new_n))
-        y_star = (y_avg*tf.math.sqrt(n) + new_y_avg*tf.math.sqrt(new_n))/(tf.math.sqrt(n)+tf.math.sqrt(new_n))
-    elif n == 0:
-        x_star = new_x_avg
-        y_star = new_y_avg
-    else:
-        raise ValueError
-
-    new_Sx = Sx + tf.math.reduce_sum((new_x-x_star)**2)
-    new_Sxy = Sxy + tf.math.reduce_sum((new_x-x_star).transpose() * (new_y-y_star).reshape(-1)) #TODO : check correctness
-
-    beta = new_Sxy/new_Sx
-    alpha = new_y_avg - beta * new_x_avg
-    return new_Sxy, new_Sx, new_n, alpha, beta, new_x_avg, new_y_avg
 
 
 
 def get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, targets_idx, pretrained):
-    
+    #tf.compat.v1.enable_eager_execution()
     tf.experimental.numpy.experimental_enable_numpy_behavior()
     
     base_model = VGG19(include_top=False)
@@ -478,7 +436,7 @@ def get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train
 
     model.compile(optimizer=SGD(), 
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-                  metrics=['accuracy'],run_eagerly=True)
+                  metrics=['accuracy'])#,run_eagerly=True)
     
     from datetime import datetime
     from packaging import version
@@ -507,12 +465,12 @@ def get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train
         # Export the graph
         tf.summary.trace_export(name="my_trace", step=0, profiler_outdir=logdir)"""
     
-    history = model.fit(X_train[:16], y_train[:16], epochs=1, batch_size=8,
+    history = model.fit(X_train[:32], y_train[:32], epochs=2, batch_size=16,
                         validation_data=(X_valid[:8], y_valid[:8]), 
                         callbacks=[tensorboard_callback])
     
     
-    model.save('./DAP/'+model_name)
+    model.save('./DAP/'+model_name+'_2')
     
     
     return model 
