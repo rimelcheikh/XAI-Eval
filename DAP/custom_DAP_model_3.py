@@ -90,7 +90,7 @@ class DAPModel(Model):
     def call(self,inputs,training=None,true_label=None):
        #return inputs#self.model(inputs)
        #x = self.model(inputs
-       x = self.backbone_layer_0(inputs)
+       """x = self.backbone_layer_0(inputs)
        x = self.backbone_layer_1(x)
        x = self.backbone_layer_2(x)
        x = self.backbone_layer_3(x)
@@ -113,11 +113,11 @@ class DAPModel(Model):
        x = self.backbone_layer_20(x)
        x = self.backbone_layer_21(x)
        x = self.GlobalAveragePooling2D(x)  #shape=(64,512)
-       return x
+       return x"""
        """x = self.attributes_layer(x,self.true_label,self.training)   #[64, 12]
        print('okk')
        return self.class_layer(x)   #[64, 17]"""
-       #return self.cal(inputs)
+       return inputs
     
 
     
@@ -213,7 +213,7 @@ class CustomLabelsLayer(Layer):
 
 
     def call(self, inputs):
-        #return Dense(17)(inputs)
+        return Dense(17)(inputs)
         
         w = self.weights_matrix#tf.convert_to_tensor(self.weights_matrix,dtype=tf.float32)
         w_i = tf.linalg.pinv(w).transpose()
@@ -318,7 +318,7 @@ class CustomSVRActivationLayer(Layer):
 
     
     def call(self, inputs, true_label, training):       
-        #return Dense(12)(inputs)
+        return Dense(12)(inputs)
         print('okkk')
         res = self.reg_function(inputs, true_label, training)
         print('----',res)
@@ -436,7 +436,7 @@ def get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train
 
     model.compile(optimizer=SGD(), 
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-                  metrics=['accuracy'])#,run_eagerly=True)
+                  metrics=['accuracy'],run_eagerly=True)
     
     from datetime import datetime
     from packaging import version
@@ -467,7 +467,7 @@ def get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train
     
     history = model.fit(X_train[:32], y_train[:32], epochs=2, batch_size=16,
                         validation_data=(X_valid[:8], y_valid[:8]), 
-                        callbacks=[tensorboard_callback])
+                        )
     
     
     model.save('./DAP/'+model_name+'_2')

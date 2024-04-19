@@ -79,10 +79,17 @@ class CustomPublicImageModelWrapper(tcav_model.ImageModelWrapper):
           layers = self.model.layers[0].layers
       except:
           layers = self.model.layers
-          
+      
+      
       for layer in layers:
+           try:
+               self.bottlenecks_tensors[layer.name] = layer.output
+           except:
+               print(layer.name ,'not a bottleneck, so no bottleneck tensor')    
+      
+      """for layer in layers:
         if 'input' not in layer.name and 'activation' not in layer.name and 'batch_normalization' not in layer.name and 'conv2d' not in layer.name:
-          self.bottlenecks_tensors[layer.name] = layer.output
+          self.bottlenecks_tensors[layer.name] = layer.output"""
 
     def get_inputs_and_outputs_and_ends(self):
       self.ends['input'] = self.model.inputs[0]
@@ -175,7 +182,7 @@ def run_tcav_custom(model, target, concept, dataset, bottleneck, model_name, wor
     # using model.save and am loading it again in keras here using load_model.
     #model = load_model('./DAP/adjusted_'+model_name+'_'+target)
     
-    model = load_model('./DAP/'+model_name)
+    #model = load_model('./DAP/'+model_name+'_2')
     #model = load_model('./DAP/model')
     
     
@@ -194,11 +201,11 @@ def run_tcav_custom(model, target, concept, dataset, bottleneck, model_name, wor
         )
     except:
         endpoints = dict(
-            input=model.inputs[0].name,
-            input_tensor=model.inputs[0],
-            logit=model.outputs[0].name,
-            prediction=model.outputs[0].name,
-            prediction_tensor=model.outputs[0],
+            input=model.layers[0].name,
+            input_tensor=model.layers[0],
+            logit=model.layers[-4].name,
+            prediction=model.layers[-4].name,
+            prediction_tensor=model.layers[-4],
         )
     
     #img_shape = model.inputs[0].shape 
