@@ -1,3 +1,0 @@
-#Generated
-DAP/DAP
-DAP/results

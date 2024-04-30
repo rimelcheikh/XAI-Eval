@@ -17,13 +17,13 @@ from sklearn.metrics import r2_score
 
 xai = 'tcav'
 dataset = 'imagenet'  
-model_name = "resnet_101"
+model_name = "inceptionv3"
 concepts_dataset = 'broden'
 rationales_dataset = 'awa'
 
 num_random_exp = 10
 
-alphas_cav = [0.01]
+alphas_cav = [0.11]
 model_cav = 'logistic'
 
 test_dir = model_name+'_'+dataset+'_'+concepts_dataset+'_'+rationales_dataset+'_'+model_cav+'_'+str(alphas_cav[0])

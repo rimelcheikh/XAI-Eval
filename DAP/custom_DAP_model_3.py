@@ -47,6 +47,8 @@ class DAPModel(Model):
         self.targets_idx = targets_idx
         self.true_label = None
         self.training = None
+        self.inputs = None
+        self.outputs = None
         #self.out = self.call(self.input_layer)
     
 
@@ -60,6 +62,7 @@ class DAPModel(Model):
         
         #return inputs#self.model(inputs)
         #x = self.model(inputs)
+        self.inputs = self.backbone_layer_0(inputs)
         x = self.backbone_layer_0(inputs)
         x = self.backbone_layer_1(x)
         x = self.backbone_layer_2(x)
@@ -85,6 +88,7 @@ class DAPModel(Model):
         #x = self.dense_layer(x)
         x = self.GlobalAveragePooling2D(x)  #shape=(64,512)
         x = self.attributes_layer(x,self.true_label,self.training)   #[64, 12]
+        self.outputs = self.class_layer(x)
         return self.class_layer(x)   #[64, 17]
     
     def call(self,inputs,training=None,true_label=None):

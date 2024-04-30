@@ -159,7 +159,7 @@ model = get_DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_t
 
 
 
-_, SVR = DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, targets_idx,pretrained)
+#model, SVR = DAP_model(targets, concepts, model_name, weights_matrix, mat_pd, X_train, y_train, y_train_0, X_valid, y_valid, idx_to_label_cifar, targets_idx,pretrained)
 
 
 #pred_per_x = run_testing_DAP(model, model_name, SVR, mat_pd, idx_to_label_cifar, X_test, y_test, y_test_0, pretrained)
