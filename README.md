@@ -7,3 +7,15 @@ This repository contains Python code to compute plausibility metric knwoledge-ba
 
 
 
+### Usage
+1. Clone the repository to your local machine.
+
+2. Install the required dependencies:
+pip install -r requirements.txt
+
+
+3. Use the provided Python script to compute the plausibility metric:
+python eval_plausibility.py 
+
+
+
